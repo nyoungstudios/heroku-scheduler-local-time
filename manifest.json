@@ -1,0 +1,17 @@
+{
+  "name": "Heroku Scheduler Local Time",
+  "version": "1.0",
+  "description": "Converts UTC time to Local Time for Heroku Scheduler",
+  "author": "Nathaniel Young",
+  "manifest_version": 2,
+    "content_scripts": [
+    {
+      "matches": ["https://dashboard.heroku.com/apps/*/scheduler*"],
+      "js": ["jquery.min.js", "arrive.min.js", "contentscript.js"]
+    }
+  ],
+  "permissions": [
+    "tabs",
+    "https://dashboard.heroku.com/apps/*/scheduler*"
+  ]
+}

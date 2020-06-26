@@ -13,11 +13,13 @@ var minutesInDay = 24 * 60;
 
 let dateOptions = {year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric', timeZoneName: 'short'};
 
+// text to select different elements
 var frequencySelector = '#scheduling-frequency-select';
 var saveJobButton = 'button:contains(Save Job)';
 var editSelector = '.cursor-pointer > [data-test-icon-name="edit-16"]';
 var deleteSelector = '.cursor-pointer > [data-test-icon-name="delete-16"]';
 
+// keeps track of the number of rows in the table aka the number of jobs
 var numberOfRows = 0;
 
 // after the document finally loads
@@ -30,8 +32,8 @@ $(document).arrive('table', {onceOnly: true}, function() {
   // adds listener for on click the Add Job button
   $('button:contains(Add Job)').on('click', function() {
     console.log('Add Job');
-    // listen to the side panel to open
-    $(document).arrive(frequencySelector, {onceOnly: true}, function() {
+    // listener for the side panel to open
+    $('#hk-slide-panels').arrive(frequencySelector, {onceOnly: true}, function() {
       console.log('hi');
       // listen for the save button to be clicked
       $(saveJobButton).on('click', function() {
@@ -62,20 +64,30 @@ $(document).arrive('table', {onceOnly: true}, function() {
   
   // event handler for when the selected option changes to "Every day at..."
   $(document).on('change', frequencySelector, function() {
-    convertTimeOnSidePanel(this);
+    convertTimeOnSidePanel(this, true);
   });
   
 });
 
 // function to create click handler for a job edit button
-function createForEdit(tr) {
-  $(tr).on('click', function() {
+function createForEdit(trEdit) {
+  $(trEdit).on('click', function() {
+    var thatParent = this.parentElement.parentElement.parentElement.parentElement.parentElement;
     console.log('testing');
-    $(document).arrive(frequencySelector, {onceOnly: true}, function() {
-      convertTimeOnSidePanel(frequencySelector);
+    // listener for the side panel to open
+    $('#hk-slide-panels').arrive(frequencySelector, {onceOnly: true}, function(elem) {
+      convertTimeOnSidePanel(frequencySelector, false);
       console.log('inside arrival');
+      // event handler for the Save Job button to be clicked
       $(saveJobButton).on('click', function() {
         console.log('saving over here');
+        var selectedOption = $(elem).find("option:selected").text();
+        if (selectedOption.includes('Every day at...')) {
+          var newTime = $('#scheduling-offset-select').find("option:selected").text();
+          updateRowNewTimes(thatParent, updateFormat1ToNewTime(newTime), updateFormat2ToNewTime(newTime));
+        } else if (selectedOption.includes('Every 10 minutes')) {
+          updateRowNewTimes(thatParent, 'Every 10 minutes', updateFormat2ToNewTime10Minutes());
+        }
       });
     });
 
@@ -83,12 +95,13 @@ function createForEdit(tr) {
 };
 
 // function to create click handler for a job delete button
-function createForDelete(tr) {
-  $(tr).on('click', function() {
+function createForDelete(trDelete) {
+  $(trDelete).on('click', function() {
     console.log('testing2');
+    // listener for when the delete pop up is created
     $('#modal-overlays').arrive('.modal-box', {onceOnly: true}, function() {
-
       console.log('inside arrival2');
+      // event handler for when the delete button is clicked
       $('.btn.btn-danger.async-button.default.ember-view').on('click', function() {
         console.log('deleting over here');
         numberOfRows--;
@@ -123,12 +136,34 @@ function updateRow(tr) {
   return 1;
 };
 
+// function to update the new times in a row
+function updateRowNewTimes(tr, frequency, nextDue) {
+  var count = 0;
+
+  // for each column
+  $('td', tr).each(function () {
+    if (count == 2) {
+      var span = $(this).children('span')[0];
+      $(span).text(frequency);
+    } else if (count == 4) {
+      var span = $(this).children('span')[0];
+      $(span).text(nextDue);
+    }
+
+    count += 1;
+  })
+};
+
 // helper function to update time on UI for side panel popout
-function convertTimeOnSidePanel(elem) {
+function convertTimeOnSidePanel(elem, isNewJob) {
   var selectedOption = $(elem).find("option:selected").text();
 //  console.log(selectedOption);
   if (selectedOption.includes('Every day at...')) {
     var offsetSelector = $('#scheduling-offset-select');
+    
+    if (isNewJob) {
+      console.log('hi, this is a new job');
+    }
     
     // this doesn't work
 //    offsetSelector.find('option:contains("' + convertMinutesToHoursMinutes(offsetMinutes, true) + '")').prop('selected',true);
@@ -248,4 +283,52 @@ function convertFormat2ToLocal(utcTime) {
   var localStringList = localString.split(',');
   var finalLocalString = localStringList[0] + ',' + localStringList[1] + localStringList[2];
   return finalLocalString;
+};
+
+// function to update format 1 to new time
+function updateFormat1ToNewTime(newTime) {
+  if (newTime[0] == '0') {
+    newTime = newTime.substring(1);
+  }
+  
+  return 'Daily at ' + newTime + ' ' + tz;
+};
+
+// helper function to parse hours and minutes from job scheduler menu
+function parseSidecarTime(newTime) {
+  var hmList = newTime.split(':');
+  var hours = parseInt(hmList[0]);
+  var secondHalf = hmList[1].split(' ');
+  var minutes = secondHalf[0];
+  
+  if (secondHalf[1] == 'PM' && hours != 12) {
+    hours += 12;
+  } else if (secondHalf[1] == 'AM' && hours == 12) {
+    hours -= 12;
+  }
+  
+  return [hours, minutes]
+};
+
+// function to update format 2 to new time
+function updateFormat2ToNewTime(newTime) {
+  var parsedTime = parseSidecarTime(newTime);
+  var hours = parsedTime[0]
+  var minutes = parsedTime[1];
+  
+  var today = new Date();
+  var newDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes);
+  if (newDate < today) {
+    newDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1, hours, minutes);
+  }
+  
+  return convertFormat2ToLocal(newDate);
+};
+
+// function to update format 2 to new time for 10 minute interval
+function updateFormat2ToNewTime10Minutes() {
+  var today = new Date();
+  var newDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), today.getHours(), today.getMinutes() + 10);
+  
+  return convertFormat2ToLocal(newDate);
 };

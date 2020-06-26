@@ -15,6 +15,8 @@ let dateOptions = {year: 'numeric', month: 'long', day: 'numeric', hour: 'numeri
 
 var frequencySelector = '#scheduling-frequency-select';
 var saveJobButton = 'button:contains(Save Job)';
+var editSelector = '.cursor-pointer > [data-test-icon-name="edit-16"]';
+var deleteSelector = '.cursor-pointer > [data-test-icon-name="delete-16"]';
 
 var numberOfRows = 0;
 
@@ -22,24 +24,26 @@ var numberOfRows = 0;
 $(document).arrive('table', {onceOnly: true}, function() {
   // updates the times for all the rows in the table
   $('table tr').each(function () {
-    updateRow(this);
-    numberOfRows++;   
+    numberOfRows += updateRow(this);
   });
   
   // adds listener for on click the Add Job button
   $('button:contains(Add Job)').on('click', function() {
     console.log('Add Job');
     // listen to the side panel to open
-    $(document).arrive('#scheduler-job-editor', {onceOnly: true}, function() {
+    $(document).arrive(frequencySelector, {onceOnly: true}, function() {
       console.log('hi');
       // listen for the save button to be clicked
       $(saveJobButton).on('click', function() {
         console.log('saving job');
-        console.log(numberOfRows);
         // listen for the new row to be created in the table
         $(document).arrive('table tr', {fireOnAttributesModification: true, onceOnly: true}, function() {
-          updateRow($('table tr').get(numberOfRows));
-          numberOfRows++;
+          console.log('updating row');
+          var tableTr = $('table tr');
+          createForEdit(tableTr.find(editSelector).get(numberOfRows));
+          createForDelete(tableTr.find(deleteSelector).get(numberOfRows));
+          numberOfRows += updateRow(tableTr.get(numberOfRows));
+          console.log(numberOfRows);
         });
       });
 
@@ -47,14 +51,13 @@ $(document).arrive('table', {onceOnly: true}, function() {
   });
   
   // creates on click event handlers for all the jobs edit buttons
-  $('.cursor-pointer > [data-test-icon-name="edit-16"]').each(function() {
-    $(this).on('click', function() {
-      console.log('testing');
-      $(document).arrive(frequencySelector, {onceOnly: true}, function() {
-        convertTimeOnSidePanel(frequencySelector);
-      });
-      
-    });
+  $(editSelector).each(function() {
+    createForEdit(this);
+  });
+  
+  // creates on click event handlers for all the jobs delete buttons
+  $(deleteSelector).each(function() {
+    createForDelete(this);
   });
   
   // event handler for when the selected option changes to "Every day at..."
@@ -63,6 +66,38 @@ $(document).arrive('table', {onceOnly: true}, function() {
   });
   
 });
+
+// function to create click handler for a job edit button
+function createForEdit(tr) {
+  $(tr).on('click', function() {
+    console.log('testing');
+    $(document).arrive(frequencySelector, {onceOnly: true}, function() {
+      convertTimeOnSidePanel(frequencySelector);
+      console.log('inside arrival');
+      $(saveJobButton).on('click', function() {
+        console.log('saving over here');
+      });
+    });
+
+  });
+};
+
+// function to create click handler for a job delete button
+function createForDelete(tr) {
+  $(tr).on('click', function() {
+    console.log('testing2');
+    $('#modal-overlays').arrive('.modal-box', {onceOnly: true}, function() {
+
+      console.log('inside arrival2');
+      $('.btn.btn-danger.async-button.default.ember-view').on('click', function() {
+        console.log('deleting over here');
+        numberOfRows--;
+        console.log(numberOfRows);
+      });
+    });
+
+  });
+};
 
 // function to update the times in a row
 function updateRow(tr) {
@@ -84,6 +119,8 @@ function updateRow(tr) {
 
     count += 1;
   })
+  
+  return 1;
 };
 
 // helper function to update time on UI for side panel popout

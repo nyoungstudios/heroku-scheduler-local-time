@@ -31,21 +31,21 @@ $(document).arrive('table', {onceOnly: true}, function() {
   
   // adds listener for on click the Add Job button
   $('button:contains(Add Job)').on('click', function() {
-    console.log('Add Job');
+    
     // listener for the side panel to open
     $('#hk-slide-panels').arrive(frequencySelector, {onceOnly: true}, function() {
-      console.log('hi');
+    
       // listen for the save button to be clicked
       $(saveJobButton).on('click', function() {
-        console.log('saving job');
+    
         // listen for the new row to be created in the table
         $(document).arrive('table tr', {fireOnAttributesModification: true, onceOnly: true}, function() {
-          console.log('updating row');
+    
           var tableTr = $('table tr');
           createForEdit(tableTr.find(editSelector).get(numberOfRows));
           createForDelete(tableTr.find(deleteSelector).get(numberOfRows));
           numberOfRows += updateRow(tableTr.get(numberOfRows));
-          console.log(numberOfRows);
+//          console.log(numberOfRows);
         });
       });
 
@@ -73,20 +73,30 @@ $(document).arrive('table', {onceOnly: true}, function() {
 function createForEdit(trEdit) {
   $(trEdit).on('click', function() {
     var thatParent = this.parentElement.parentElement.parentElement.parentElement.parentElement;
-    console.log('testing');
+    
     // listener for the side panel to open
     $('#hk-slide-panels').arrive(frequencySelector, {onceOnly: true}, function(elem) {
       convertTimeOnSidePanel(frequencySelector, false);
-      console.log('inside arrival');
+      
       // event handler for the Save Job button to be clicked
       $(saveJobButton).on('click', function() {
-        console.log('saving over here');
         var selectedOption = $(elem).find("option:selected").text();
+        
+        // based on selected option, update table row appropriately
         if (selectedOption.includes('Every day at...')) {
           var newTime = $('#scheduling-offset-select').find("option:selected").text();
           updateRowNewTimes(thatParent, updateFormat1ToNewTime(newTime), updateFormat2ToNewTime(newTime));
         } else if (selectedOption.includes('Every 10 minutes')) {
           updateRowNewTimes(thatParent, 'Every 10 minutes', updateFormat2ToNewTime10Minutes());
+        } else if (selectedOption.includes('Every hour at...')) {
+          var newTime = $('#scheduling-offset-select').find("option:selected").text();
+          var newTimeTrim = newTime.trim().substring(1);
+          
+          if (newTimeTrim == '00') {
+            newTimeTrim = '0';
+          }
+          
+          updateRowNewTimes(thatParent, 'Hourly at :' + newTimeTrim, updateFormat2ToNewTime1Hour(parseInt(newTimeTrim)));
         }
       });
     });
@@ -97,15 +107,12 @@ function createForEdit(trEdit) {
 // function to create click handler for a job delete button
 function createForDelete(trDelete) {
   $(trDelete).on('click', function() {
-    console.log('testing2');
     // listener for when the delete pop up is created
     $('#modal-overlays').arrive('.modal-box', {onceOnly: true}, function() {
-      console.log('inside arrival2');
       // event handler for when the delete button is clicked
       $('.btn.btn-danger.async-button.default.ember-view').on('click', function() {
-        console.log('deleting over here');
         numberOfRows--;
-        console.log(numberOfRows);
+//        console.log(numberOfRows);
       });
     });
 
@@ -161,13 +168,14 @@ function convertTimeOnSidePanel(elem, isNewJob) {
   if (selectedOption.includes('Every day at...')) {
     var offsetSelector = $('#scheduling-offset-select');
     
-    if (isNewJob) {
-      console.log('hi, this is a new job');
-    }
+//    if (isNewJob) {
+//      console.log('hi, this is a new job');
+//    }
     
     // this doesn't work
 //    offsetSelector.find('option:contains("' + convertMinutesToHoursMinutes(offsetMinutes, true) + '")').prop('selected',true);
 //    console.log(convertMinutesToHoursMinutes(offsetMinutes, true));
+//    offsetSelector.get(0).selectedIndex = 0;
 
     $('#scheduling-offset-select > option').each(function () {
       var oldMinutes = $(this).val();
@@ -193,14 +201,7 @@ function convertTimeOnSidePanel(elem, isNewJob) {
         return textA > textB ? 1 : -1;
       }
 
-    }));
-
-//      offsetSelector.find('option:contains("12:00 AM")').prop('selected',true);
-
-//      $.when(sorting()).done(function () {
-//        offsetSelector.get(0).selectedIndex = 0;
-//      });
-    
+    }));    
 
     // updates the timezone name
     offsetSelector.next().text(tz);
@@ -329,6 +330,17 @@ function updateFormat2ToNewTime(newTime) {
 function updateFormat2ToNewTime10Minutes() {
   var today = new Date();
   var newDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), today.getHours(), today.getMinutes() + 10);
+  
+  return convertFormat2ToLocal(newDate);
+};
+
+// function to update format 2 to new time for 1 hour interval
+function updateFormat2ToNewTime1Hour(minutes) {
+  var today = new Date();
+  var newDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), today.getHours(), minutes);
+  if (newDate < today) {
+    newDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), today.getHours() + 1, minutes);
+  }
   
   return convertFormat2ToLocal(newDate);
 };

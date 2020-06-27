@@ -2,8 +2,9 @@
 :atom_symbol: Chrome extension to convert UTC time to local time for Heroku Scheduler.
 
 ## Features
-Changes all the times in the Heroku Scheduler dashboard and the new/edit job side panel to your local time.\
-Also, updates the main table after editing an existing job.
+Changes all the times in the Heroku Scheduler dashboard to your local time.\
+Updates the main table on load, after editing an existing job, and after adding new job.\
+Supports adding new and editing exisiting jobs for all the options (Every day at..., Every 10 minutes, and Every hour at...).
 
 ## Screenshot
 ![Heroku Scheduler Local Time Screenshot](/screenshots/localTimeExample.png)

@@ -31,25 +31,8 @@ $(document).arrive('table', {onceOnly: true}, function() {
   
   // adds listener for on click the Add Job button
   $('button:contains(Add Job)').on('click', function() {
+    addJobListener()
     
-    // listener for the side panel to open
-    $('#hk-slide-panels').arrive(frequencySelector, {onceOnly: true}, function() {
-    
-      // listen for the save button to be clicked
-      $(saveJobButton).on('click', function() {
-    
-        // listen for the new row to be created in the table
-        $(document).arrive('table tr', {fireOnAttributesModification: true, onceOnly: true}, function() {
-    
-          var tableTr = $('table tr');
-          createForEdit(tableTr.find(editSelector).get(numberOfRows));
-          createForDelete(tableTr.find(deleteSelector).get(numberOfRows));
-          numberOfRows += updateRow(tableTr.get(numberOfRows));
-//          console.log(numberOfRows);
-        });
-      });
-
-    });
   });
   
   // creates on click event handlers for all the jobs edit buttons
@@ -68,6 +51,36 @@ $(document).arrive('table', {onceOnly: true}, function() {
   });
   
 });
+
+// if the page loads with the add new/edit job panel open
+if (window.location.href.includes('?job=new')) {
+  addJobListener();
+} else if (window.location.href.includes('?job=')) {
+  var jobId = window.location.href.split('?job=')[1];
+//  console.log(jobId);
+}
+
+// function to listen for side panel to open for add job
+function addJobListener() {
+  // listener for the side panel to open
+  $('#hk-slide-panels').arrive(frequencySelector, {onceOnly: true}, function() {
+    
+    // listen for the save button to be clicked
+    $(saveJobButton).on('click', function() {
+      
+      // listen for the new row to be created in the table
+      $(document).arrive('table tr', {fireOnAttributesModification: true, onceOnly: true}, function() {
+        
+        var tableTr = $('table tr');
+        createForEdit(tableTr.find(editSelector).get(numberOfRows));
+        createForDelete(tableTr.find(deleteSelector).get(numberOfRows));
+        numberOfRows += updateRow(tableTr.get(numberOfRows));
+//        console.log(numberOfRows);
+      });
+    });
+
+  });
+};
 
 // function to create click handler for a job edit button
 function createForEdit(trEdit) {

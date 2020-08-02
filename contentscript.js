@@ -140,7 +140,7 @@ $(document).arrive('table', {onceOnly: true}, function() {
     createForDelete(this);
   });
 
-  // event handler for when the selected option changes to "Every day at..."
+  // event handler for when the selected option changes to "Every day at..." or "Every hour at..."
   $(document).on('change', frequencySelector, function() {
     convertTimeOnSidePanel(this, true);
   });
@@ -151,8 +151,19 @@ $(document).arrive('table', {onceOnly: true}, function() {
 if (window.location.href.includes('?job=new')) {
   addJobListener();
 } else if (window.location.href.includes('?job=')) {
+  // gets job id on page load
   var jobId = window.location.href.split('?job=')[1];
 //  console.log(jobId);
+
+  // need to get thatParent (aka which row the job id referrers to)
+
+  // listener for the side panel to open
+  $('#hk-slide-panels').arrive(frequencySelector, {onceOnly: true}, function(elem) {
+    convertTimeOnSidePanel(frequencySelector, false);
+
+    // console.log(elem);
+  });
+
 }
 
 // function to listen for side panel to open for add job

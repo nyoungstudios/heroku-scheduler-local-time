@@ -26,6 +26,9 @@ var deleteSelector = '.cursor-pointer > [data-test-icon-name="delete-16"]';
 // keeps track of the number of rows in the table aka the number of jobs
 var numberOfRows = 0;
 
+// specifies the sort direction of the table
+sortDirection = {};
+
 // after the document finally loads
 $(document).arrive('table', {onceOnly: true}, function() {
   // updates the times for all the rows in the table
@@ -33,10 +36,98 @@ $(document).arrive('table', {onceOnly: true}, function() {
     numberOfRows += updateRow(this);
   });
 
+  // adds listiener for on click for each column in the table
+  $('table thead th').each(function(index) {
+    // initializes sort direction
+    sortDirection[index] = -1;
+
+    // makes div header appear clickable
+    $(this).css("cursor", "pointer");
+
+    // creates on click listener for each column
+    $(this).on('click', function() {
+      // console.log(sortDirection[index]);
+      // sorts rows based on column clicked
+      $('table tbody').html($('table tbody tr').sort(function(a, b) {
+        var textA = $(a).find('td:eq(' + index + ')').text().trim();
+        var textB = $(b).find('td:eq(' + index + ')').text().trim();
+
+        if (index == 0) {
+          // sorts commented jobs to the bottom
+          var isAComment = textA.substring(2).startsWith('#');
+          var isBComment = textB.substring(2).startsWith('#');
+          if (isAComment && !isBComment) {
+            return -1 * sortDirection[index];
+          } else if (!isAComment && isBComment) {
+            return 1 * sortDirection[index];
+          }
+        } else if (index == 2 && textA.startsWith('Daily at ') && textB.startsWith('Daily at ')) {
+          // if both of the frequencies are of the daily type (format 1)
+
+          // sorts by AM/PM first
+          if (textA.includes('AM') && textB.includes('PM')) {
+            return 1 * sortDirection[index];
+          } else if (textA.includes('PM') && textB.includes('AM')) {
+            return -1 * sortDirection[index];
+          } else {
+            // parses out hours and minutes
+            var colonA = textA.split(':');
+            var colonB = textB.split(':');
+            var hoursA = parseInt(colonA[0].substring(9));
+            var hoursB = parseInt(colonB[0].substring(9));
+            // console.log(hoursA);
+            // console.log(hoursB);
+
+            // sorts 12 o'clock times first, then sorts by hours, and then minutes
+            if (hoursA == 12 && hoursB != 12) {
+              return 1 * sortDirection[index];
+            } else if (hoursA != 12 && hoursB == 12) {
+              return -1 * sortDirection[index];
+            } else {
+              if (hoursA != hoursB) {
+                return (hoursA > hoursB ? -1 : 1) * sortDirection[index];
+              } else {
+                var minutesA = parseInt(colonA[1].substring(0, 2));
+                var minutesB = parseInt(colonB[1].substring(0, 2));
+                // console.log(minutesA, minutesB);
+                return (minutesA > minutesB ? -1 : 1) * sortDirection[index];
+              }
+            }
+
+          }
+
+        } else if (index == 3 || index == 4) {
+          // sorts Last Run and Next Due by parsing the dates
+          // puts Never at the end
+          if (index == 3 && textA == 'Never') {
+            return -1 * sortDirection[index];
+          }
+          return (new Date(textA) > new Date(textB) ? -1 : 1) * sortDirection[index];
+        }
+
+        // default comparer
+        return (textA > textB ? -1 : 1) * sortDirection[index];
+      }));
+
+      // reverses the sort direction
+      sortDirection[index] *= -1;
+
+      // recreates on click event handlers for all the jobs edit buttons
+      $(editSelector).each(function() {
+        createForEdit(this);
+      });
+
+      // recreates on click event handlers for all the jobs delete buttons
+      $(deleteSelector).each(function() {
+        createForDelete(this);
+      });
+
+    });
+  });
+
   // adds listener for on click the Add Job button
   $('button:contains(Add Job)').on('click', function() {
-    addJobListener()
-
+    addJobListener();
   });
 
   // creates on click event handlers for all the jobs edit buttons
@@ -187,10 +278,6 @@ function convertTimeOnSidePanel(elem, isNewJob) {
   if (selectedOption.includes('Every day at...')) {
     var offsetSelector = $('#scheduling-offset-select');
 
-//    if (isNewJob) {
-//      console.log('hi, this is a new job');
-//    }
-
     // this doesn't work
 //    offsetSelector.find('option:contains("' + convertMinutesToHoursMinutes(offsetMinutes, true) + '")').prop('selected',true);
 //    console.log(convertMinutesToHoursMinutes(offsetMinutes, true));
@@ -222,6 +309,11 @@ function convertTimeOnSidePanel(elem, isNewJob) {
 
     }));
 
+    // if (isNewJob) {
+    //   offsetSelector.get(0).selectedIndex = 0;
+    //   offsetSelector.trigger('change');
+    // }
+
     // updates the timezone name
     offsetSelector.next().text(tz);
   } else if(selectedOption.includes('Every hour at...')) {
@@ -240,6 +332,11 @@ function convertTimeOnSidePanel(elem, isNewJob) {
       var textB = $(b).text();
       return textA > textB ? 1 : -1;
     }));
+
+    // if (isNewJob) {
+    //   offsetSelector.get(0).selectedIndex = 0;
+    //   offsetSelector.trigger('change');
+    // }
 
   }
 };

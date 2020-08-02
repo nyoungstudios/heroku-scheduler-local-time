@@ -226,12 +226,18 @@ function createForEdit(trEdit) {
 // function to create click handler for a job delete button
 function createForDelete(trDelete) {
   $(trDelete).on('click', function() {
+    var thatParent = this.parentElement.parentElement.parentElement.parentElement.parentElement;
+
     // listener for when the delete pop up is created
     $('#modal-overlays').arrive('.modal-box', {onceOnly: true}, function() {
       // event handler for when the delete button is clicked
       $('.btn.btn-danger.async-button.default.ember-view').on('click', function() {
+        // updates row count variable
         numberOfRows--;
 //        console.log(numberOfRows);
+
+        // removes row from main table
+        thatParent.remove();
       });
     });
 

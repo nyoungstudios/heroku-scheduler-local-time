@@ -9,7 +9,7 @@ Supports adding new and editing exisiting jobs for all the options (Every day at
 Creates the ability to sort the table by each of the columns (including sorting special cases such as Never run and commented jobs as the end) by clicking on the column header. Table sort by column also features reverse sort if clicked on again.
 
 ## Screenshot
-![Heroku Scheduler Local Time Screenshot](/screenshots/localTimeExample.png)
+![Heroku Scheduler Local Time Screenshot](/screenshots/localTimeExample1.1.0.png)
 
 ## Built with :heart: and
 JavaScript\

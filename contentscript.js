@@ -197,6 +197,8 @@ function createForEdit(trEdit) {
     $('#hk-slide-panels').arrive(frequencySelector, {onceOnly: true}, function(elem) {
       convertTimeOnSidePanel(frequencySelector, false);
 
+      var originalOption = $(elem).find("option:selected").text();
+
       // event handler for the Save Job button to be clicked
       $(saveJobButton).on('click', function() {
         var selectedOption = $(elem).find("option:selected").text();
@@ -206,7 +208,11 @@ function createForEdit(trEdit) {
           var newTime = $('#scheduling-offset-select').find("option:selected").text();
           updateRowNewTimes(thatParent, updateFormat1ToNewTime(newTime), updateFormat2ToNewTime(newTime));
         } else if (selectedOption.includes('Every 10 minutes')) {
-          updateRowNewTimes(thatParent, 'Every 10 minutes', updateFormat2ToNewTime10Minutes());
+          // only update row if this every 10 minute option was a different than the original option
+          // in order words, if it was the same option...it is basically like not changing anything
+          if (originalOption != selectedOption) {
+            updateRowNewTimes(thatParent, 'Every 10 minutes', updateFormat2ToNewTime10Minutes());
+          }
         } else if (selectedOption.includes('Every hour at...')) {
           var newTime = $('#scheduling-offset-select').find("option:selected").text();
           var newTimeTrim = newTime.trim().substring(1);
